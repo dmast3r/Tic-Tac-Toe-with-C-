@@ -22,11 +22,23 @@ bool ismatch(int row, int column, int (*board)[3], char symbol) { // symbol repr
 	// check for a diagonal match, either the principal diagonal or the other.
 	if(row == column or (row == 2 and column == 0) or (column == 2 and row == 0)) {
         if(row == column) { // check principal diagonal
-            for(int i = 0; i < 3; ++i) {
-                if(board[i][i] != value) {
-                    diagonal_match = false;
-                    break;
+            if(row != 1 and column != 1) {
+                for(int i = 0; i < 3; ++i) {
+                    if(board[i][i] != value) {
+                        diagonal_match = false;
+                        break;
+                    }
                 }
+            }
+            else { // check for principal and other diagonal at same time(when the cell being filled is 1, 1 then we will have to check both the diagonals
+                for(int i = 0; i < 3; ++i) {
+                    if(board[i][i] != value) {
+                        diagonal_match = false;
+                        break;
+                    }
+                }
+                if(board[0][2] == board[1][1] and board[2][0] == board[1][1] and board[1][1] == value)
+                    diagonal_match = true;
             }
         }
         else { // check for the other diagonal
@@ -38,7 +50,8 @@ bool ismatch(int row, int column, int (*board)[3], char symbol) { // symbol repr
             }
         }
 	}
-	else diagonal_match = false; // if the current cell does not lie in any of the diagonal then there is no role of diagonal hence set it to false.
+	else
+        diagonal_match = false; // if the current cell does not lie in any of the diagonal then there is no role of diagonal hence set it to false.
     return row_match || column_match || diagonal_match; // if any one of them is true than return true(i.e. there is a match)
 }
 // This is just for printing a particular cell
@@ -72,7 +85,7 @@ int minimax(int moves, int (*board)[3], bool computer_turn) {
 	if(moves == 9)
 		return 0; // if all the moves have been exhausted then return 0;
  	if(computer_turn) { // if it is Computer's turn to play then act as Maximizer.
-		int max_score = 0; // start with 0 score(based on the assumption that it will be atleast a draw)
+		int max_score = -10; // start with the least possible score.
 		for(int i = 0; i < 3; ++i) {
 			for(int j = 0; j < 3; ++j) {
 				if(board[i][j] == -1) { // if there is an unfilled cell
@@ -81,10 +94,14 @@ int minimax(int moves, int (*board)[3], bool computer_turn) {
                         board[i][j] = -1; // reset the cell
 						return 10; // and return 10;
 					}
-					int temp = minimax(moves + 1, board, false); // if not a consecutive match than recursively try the Minimax algorithm
-					if(max_score >= temp) // check if the current move fetch a larger score
-                        max_score = temp;  // reset the larger score
-					board[i][j] = -1; // reset the cell
+					int score = minimax(moves + 1, board, false); // if not a consecutive match than recursively try the Minimax algorithm
+					if(score == 10) { // check if the current move fetch a win
+                        board[i][j] = -1; 
+                        return score;  // if yes then make this move(as maximizer and return)
+					}
+					else if(score == 0) // if draw then update the maximum score(it will be either 0 or -10 before this as the functions returns on getting 10)
+                        max_score = 0; // update the max score
+					board[i][j] = -1; 
 				}
 			}
 		}
@@ -92,7 +109,7 @@ int minimax(int moves, int (*board)[3], bool computer_turn) {
 	}
 	else { // else act as a minimizer
         // rest of the code is similar as for maximizer except some minor changes like min in place of max, 1 in place of 0, etc.
-		int min_score = 0; // start with 0 score(based on the assumption that it will be atleast a draw)
+		int min_score = 10; // start with least possible score.
 		for(int i = 0; i < 3; ++i) {
 			for(int j = 0; j < 3; ++j) {
 				if(board[i][j] == -1) {
@@ -101,9 +118,13 @@ int minimax(int moves, int (*board)[3], bool computer_turn) {
                         board[i][j] = -1;
 						return -10;
 					}
-					int temp = minimax(moves + 1, board, true);
-					if(min_score <= temp)
-                        min_score = temp;
+					int score = minimax(moves + 1, board, true);
+					if(score == -10) {
+                        board[i][j] = -1;
+                        return score;
+					}
+					else if(score == 0)
+                        min_score = 0;
 					board[i][j] = -1;
 				}
 			}
@@ -114,21 +135,23 @@ int minimax(int moves, int (*board)[3], bool computer_turn) {
 // A utility function to find the next move for Computer.
 void nextmove(int moves, int (*board)[3]) {
 	pair<int, int> Move; // this store row and column of the next move.
-	int max_score = 0; // start with 0 score(based on the assumption that it will be atleast a draw)
 	for(int i = 0; i < 3; ++i) {
 	    for(int j = 0; j < 3; ++j) {
-            if(board[i][j] == -1) { // if there is an unfilled cell.
-                int temp;
+            if(board[i][j] == -1) { // if there is an unfilled cell
                 board[i][j] = 0;
                 if(ismatch(i, j, board, '0')) { // again check for a consecutive match.
+                    cout<< "\n\nMy Play :-\n\n";
                     printTicTacToe(board);
                     cout << endl << "You Lose!"; // if found then end the game with a win for Computer(lose for player)
                     exit(0); // terminate the game.
                 }
-                temp = minimax(moves, board, false); // else search for best move using minimax.
-                if(temp >= max_score) { // if current move fetches a win or draw
-                    max_score = temp; // update the max score
-                    // store the current move as the next move
+                int score = minimax((moves+1), board, false); // else search for best move using minimax.
+                if(score == 10 or score == 0) { // if current move fetches a win or draw
+                    if(score == 10) {c// if it is a win then return 10(max score)
+                       board[i][j] = 0; // make this move (that leads to win)
+                        return;
+                    }
+                    // else if the score is zero store the current move as the next move
                     Move.first = i;
                     Move.second = j;
                 }
@@ -136,7 +159,7 @@ void nextmove(int moves, int (*board)[3]) {
             }
 	    }
 	}
-	board[Move.first][Move.second] = 0; // make the best move.
+	board[Move.first][Move.second] = 0; // make the move that leads to draw.
 }
 // A utility function to play the game.
 void play() {
