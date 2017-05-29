@@ -96,12 +96,12 @@ int minimax(int moves, int (*board)[3], bool computer_turn) {
 					}
 					int score = minimax(moves + 1, board, false); // if not a consecutive match than recursively try the Minimax algorithm
 					if(score == 10) { // check if the current move fetch a win
-                        board[i][j] = -1; 
+                        board[i][j] = -1;
                         return score;  // if yes then make this move(as maximizer and return)
 					}
 					else if(score == 0) // if draw then update the maximum score(it will be either 0 or -10 before this as the functions returns on getting 10)
                         max_score = 0; // update the max score
-					board[i][j] = -1; 
+					board[i][j] = -1;
 				}
 			}
 		}
@@ -147,7 +147,7 @@ void nextmove(int moves, int (*board)[3]) {
                 }
                 int score = minimax((moves+1), board, false); // else search for best move using minimax.
                 if(score == 10 or score == 0) { // if current move fetches a win or draw
-                    if(score == 10) {c// if it is a win then return 10(max score)
+                    if(score == 10) {// if it is a win then return 10(max score)
                        board[i][j] = 0; // make this move (that leads to win)
                         return;
                     }
